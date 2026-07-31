@@ -1,0 +1,102 @@
+:root {
+  --orange: #e8611a;
+  --orange-deep: #c34c0e;
+  --blue: #3182f6;
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --line: #e9ebef;
+  --text: #191f28;
+  --sub: #6b7684;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); }
+body {
+  font-family: 'Pretendard', -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  word-break: keep-all;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+
+.app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+
+.hdr-title { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.hdr-icon { color: var(--orange); }
+.hdr-sub { font-size: 14px; color: var(--sub); margin-top: 4px; }
+
+.panel {
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+  padding: 18px; display: flex; flex-direction: column; gap: 14px;
+}
+.panel-title { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.title-icon { width: 20px; height: 20px; color: var(--orange); }
+
+.seg { display: flex; gap: 6px; background: #eef1f4; border-radius: 14px; padding: 5px; }
+.seg-btn {
+  flex: 1; min-height: 44px; border-radius: 10px;
+  font-size: 14px; font-weight: 700; color: var(--sub); text-align: center; min-width: 0;
+}
+.seg-btn.on { background: var(--card); color: var(--orange-deep); box-shadow: 0 1px 4px rgba(25, 31, 40, 0.12); }
+
+.chip {
+  display: flex; align-items: center; gap: 6px; min-height: 44px;
+  border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 14px;
+  font-size: 13px; font-weight: 700; color: var(--sub);
+}
+.chip.on { border-color: var(--blue); color: var(--blue); background: #f0f6ff; }
+.chip-icon { width: 18px; height: 18px; }
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field-label { font-size: 13px; font-weight: 700; color: var(--sub); }
+.field-input {
+  border: 1.5px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; font-size: 16px; font-family: inherit;
+  background: #fbfcfd; color: var(--text); outline: none; width: 100%;
+  min-height: 44px;
+}
+.field-input:focus { border-color: var(--orange); }
+
+.slider { width: 100%; accent-color: var(--orange); min-height: 28px; }
+.slider-marks { display: flex; justify-content: space-between; font-size: 11px; color: var(--sub); }
+
+.result {
+  background: var(--orange); border-radius: 16px; padding: 20px;
+  display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center;
+}
+.result-cap { font-size: 13px; font-weight: 700; color: #ffe3d1; }
+.result-big { font-size: 32px; font-weight: 900; color: #fff; }
+.result-sub { font-size: 13px; color: #ffd7bd; }
+
+.rows { display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.row dt { color: var(--sub); }
+.row dd { font-weight: 700; font-variant-numeric: tabular-nums; }
+.row.sub { border-top: 1px dashed var(--line); padding-top: 8px; }
+.row.sub dt, .row.sub dd { font-weight: 800; color: var(--text); }
+
+.meta { font-size: 12px; color: var(--sub); }
+.empty { font-size: 13px; color: var(--sub); line-height: 1.6; }
+
+.compare { display: flex; flex-direction: column; gap: 6px; }
+.compare-row { display: flex; justify-content: space-between; font-size: 14px; font-variant-numeric: tabular-nums; }
+.compare-diff { font-size: 14px; font-weight: 800; }
+.compare-diff.up { color: #e5484d; }
+.compare-diff.down { color: var(--blue); }
+
+.btn {
+  min-height: 46px; border-radius: 12px; background: #fdf0e8; color: var(--orange-deep);
+  font-size: 14px; font-weight: 800;
+}
+.btn:active { background: #fbe2d2; }
+
+.ac-result { font-size: 14px; color: var(--sub); line-height: 1.6; }
+.ac-result strong { color: var(--text); }
+
+.disclaimer {
+  font-size: 12px; color: #98a1ac; line-height: 1.6;
+  display: flex; gap: 6px; align-items: flex-start;
+}
+.disclaimer-icon { width: 16px; height: 16px; flex: none; margin-top: 2px; }
+
+.ad-banner { display: flex; flex-direction: column; gap: 4px; }
+.ad-banner-label { font-size: 11px; color: #98a1ac; }

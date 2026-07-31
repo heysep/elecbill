@@ -1,0 +1,11 @@
+import puppeteer from 'puppeteer-core';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const here = dirname(fileURLToPath(import.meta.url));
+const browser = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 600, height: 600 });
+await page.goto('file:///' + join(here, 'icon.html').replaceAll('\\', '/'));
+await page.screenshot({ path: join(here, '..', 'assets', 'icon-600.png') });
+await browser.close();
+console.log('icon done');
