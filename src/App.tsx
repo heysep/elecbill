@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AD_GROUP_ID } from './ads/config';
+import { bumpInterstitial } from './ads/interstitial';
 import { BannerAd } from './ads/BannerAd';
 import { BoltIcon, CompareIcon, InfoIcon, PlugIcon, SnowIcon } from './components/icons';
 import { STORAGE_PREFIX } from './config';
@@ -101,13 +102,13 @@ export function App() {
         <div className="seg" role="tablist" aria-label="계약 종류">
           <button
             className={'seg-btn' + (contract === 'low' ? ' on' : '')}
-            onClick={() => setContract('low')}
+            onClick={() => { setContract('low'); bumpInterstitial(3); }}
           >
             주택용 저압
           </button>
           <button
             className={'seg-btn' + (contract === 'high' ? ' on' : '')}
-            onClick={() => setContract('high')}
+            onClick={() => { setContract('high'); bumpInterstitial(3); }}
           >
             주택용 고압
           </button>
