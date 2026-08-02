@@ -18,7 +18,8 @@ body {
 }
 button { font-family: inherit; border: none; background: none; cursor: pointer; color: inherit; }
 
-.app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+/* min-height가 있어야 sticky 배너가 첫 화면부터 하단에 붙는다 (containing block) */
+.app { max-width: 480px; margin: 0 auto; min-height: 100dvh; padding: 28px 20px 40px; display: flex; flex-direction: column; gap: 14px; }
 
 .hdr-title { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
 .hdr-icon { color: var(--orange); }
@@ -142,5 +143,26 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 }
 .disclaimer-icon { width: 16px; height: 16px; flex: none; margin-top: 2px; }
 
-.ad-banner { display: flex; flex-direction: column; gap: 4px; }
+/**
+ * 배너는 화면 하단에 붙여 둔다. 문서 맨 아래에 두면 스크롤해야만 보이는데
+ * 이 앱은 결과가 첫 화면에 다 나와서 스크롤할 이유가 없다(실측 광고 노출 1~2건).
+ * fixed가 아니라 sticky라 문서 흐름의 자기 자리를 그대로 차지한다(콘텐츠를 안 덮음).
+ */
+.ad-banner {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  /* 좌우: .app 패딩(20px) 상쇄해 화면 끝까지 채운다.
+     상단 auto: sticky는 "화면 밖으로 나가려는 요소를 붙잡을" 뿐 이미 보이는 요소를 아래로 밀지
+     못한다. 페이지가 스크롤되지 않을 만큼 짧으면 min-height가 있어도 배너가 콘텐츠 끝에 그냥
+     남는다. .app이 flex column이라 margin-top: auto면 짧을 땐 바닥까지 밀리고,
+     길 땐 auto가 0이 되어 sticky가 일한다. */
+  /* 하단 -40px: .app의 padding-bottom(40px)을 상쇄한다. 안 하면 배너가 화면 하단에서
+     40px 떠서 sticky가 제 위치까지 못 간다. 배너가 자체 safe-area 패딩을 갖는다. */
+  margin: auto -20px -40px;
+  padding: 6px 20px calc(6px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
 .ad-banner-label { font-size: 11px; color: #98a1ac; }
