@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { airconMonthlyKwh, calcBill, splitTiers } from './bill';
+import { airconMonthlyKwh, calcBill, nextTierInfo, splitTiers } from './bill';
 
 describe('splitTiers', () => {
   it('기타 계절 경계 200/400', () => {
@@ -72,7 +72,60 @@ describe('calcBill 고압', () => {
   it('고압 200kWh 단가 적용', () => {
     const r = calcBill({ kwh: 200, contract: 'high', summer: false });
     expect(r.baseCharge).toBe(730);
-    expect(r.energyCharge).toBe(22000); // 200 × 110.0
+    expect(r.energyCharge).toBe(21000); // 200 × 105.0
+  });
+
+  it('고압 300kWh 전력량요금 = 200×105.0 + 100×174.0', () => {
+    const r = calcBill({ kwh: 300, contract: 'high', summer: false });
+    expect(r.energyCharge).toBe(21000 + 17400);
+  });
+
+  it('고압 401kWh 3단계 단가 242.3 적용', () => {
+    const r = calcBill({ kwh: 401, contract: 'high', summer: false });
+    expect(r.baseCharge).toBe(6060);
+    expect(r.energyCharge).toBe(21000 + 34800 + 242); // 242.3 절사
+  });
+});
+
+describe('슈퍼유저 구간', () => {
+  it('하계 1000kWh 이하는 슈퍼유저 아님', () => {
+    expect(calcBill({ kwh: 1000, contract: 'low', summer: true }).superKwh).toBe(0);
+  });
+
+  it('하계 1010kWh: 초과 10kWh에 736.2원 적용, 3단계와 중복 과금 안 함', () => {
+    const r = calcBill({ kwh: 1010, contract: 'low', summer: true });
+    expect(r.superKwh).toBe(10);
+    // 300 + 150 + (1000-450) = 1000, 나머지 10kWh는 슈퍼유저
+    expect(r.tierKwh).toEqual([300, 150, 550]);
+    expect(r.energyCharge).toBe(
+      Math.floor((300 * 1200 + 150 * 2146 + 550 * 3073 + 10 * 7362) / 10),
+    );
+  });
+
+  it('기타 계절에는 슈퍼유저 구간이 없다', () => {
+    const r = calcBill({ kwh: 1200, contract: 'low', summer: false });
+    expect(r.superKwh).toBe(0);
+    expect(r.tierKwh[2]).toBe(800);
+  });
+});
+
+describe('nextTierInfo', () => {
+  it('기타 계절 180kWh → 2단계까지 20kWh 남고, 넘으면 금액이 뛴다', () => {
+    const info = nextTierInfo(180, 'low', false)!;
+    expect(info.nextTier).toBe(2);
+    expect(info.boundary).toBe(200);
+    expect(info.remainKwh).toBe(20);
+    expect(info.jumpWon).toBeGreaterThan(0);
+  });
+
+  it('하계는 경계가 300/450', () => {
+    expect(nextTierInfo(250, 'low', true)!.boundary).toBe(300);
+    expect(nextTierInfo(320, 'low', true)!.nextTier).toBe(3);
+    expect(nextTierInfo(320, 'low', true)!.boundary).toBe(450);
+  });
+
+  it('이미 3단계면 null', () => {
+    expect(nextTierInfo(500, 'low', false)).toBeNull();
   });
 });
 

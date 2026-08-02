@@ -74,6 +74,50 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .row.sub { border-top: 1px dashed var(--line); padding-top: 8px; }
 .row.sub dt, .row.sub dd { font-weight: 800; color: var(--text); }
 
+/* 누진 구간 시각화 */
+.gauge { display: flex; flex-direction: column; gap: 4px; }
+.gauge-track {
+  position: relative; display: flex; height: 14px; width: 100%;
+  border-radius: 7px; overflow: hidden; background: #eef1f4;
+}
+.gauge-seg { display: block; height: 100%; }
+.gauge-seg.seg1 { background: #d9ecff; }
+.gauge-seg.seg2 { background: #ffe1c9; }
+.gauge-seg.seg3 { background: #ffcfcf; }
+.gauge-fill {
+  position: absolute; left: 0; top: 0; height: 100%;
+  background: rgba(25, 31, 40, 0.18);
+}
+.gauge-pin {
+  position: absolute; top: -3px; width: 3px; height: 20px; margin-left: -1.5px;
+  border-radius: 2px; background: var(--text);
+}
+.gauge-marks { position: relative; height: 14px; font-size: 11px; color: var(--sub); }
+.gauge-marks span {
+  position: absolute; transform: translateX(-50%);
+  font-variant-numeric: tabular-nums;
+}
+
+.tier-legend { display: flex; gap: 6px; }
+.tier-item {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+  padding: 8px; border-radius: 12px; background: #f7f8fa; border: 1.5px solid transparent;
+}
+.tier-item.on { border-color: var(--orange); background: #fff6f1; }
+.tier-dot { width: 8px; height: 8px; border-radius: 50%; }
+.tier-dot.d1 { background: #7fbcff; }
+.tier-dot.d2 { background: #ffab6b; }
+.tier-dot.d3 { background: #ff8080; }
+.tier-name { font-size: 12px; font-weight: 700; color: var(--sub); }
+.tier-item.on .tier-name { color: var(--orange-deep); }
+.tier-kwh { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.warn {
+  font-size: 13px; line-height: 1.6; color: var(--sub);
+  background: #f7f8fa; border-radius: 12px; padding: 10px 12px;
+}
+.warn.hot { color: #b4262a; background: #fff1f1; font-weight: 700; }
+
 .meta { font-size: 12px; color: var(--sub); }
 .empty { font-size: 13px; color: var(--sub); line-height: 1.6; }
 

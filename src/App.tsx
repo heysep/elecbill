@@ -4,7 +4,17 @@ import { bumpInterstitial } from './ads/interstitial';
 import { BannerAd } from './ads/BannerAd';
 import { BoltIcon, CompareIcon, InfoIcon, PlugIcon, SnowIcon } from './components/icons';
 import { STORAGE_PREFIX } from './config';
-import { airconMonthlyKwh, calcBill, TARIFF_DATE, type Contract } from './core/bill';
+import {
+  airconMonthlyKwh,
+  calcBill,
+  nextTierInfo,
+  TIER_BOUNDS_NORMAL,
+  TIER_BOUNDS_SUMMER,
+  TARIFF_DATE,
+  type Contract,
+} from './core/bill';
+
+const KWH_MAX = 2000;
 
 const K_KWH = STORAGE_PREFIX + 'kwh';
 const K_CONTRACT = STORAGE_PREFIX + 'contract';
@@ -45,7 +55,7 @@ const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 
 export function App() {
   const month = new Date().getMonth() + 1;
-  const [kwh, setKwh] = useState(() => loadNum(K_KWH, 300, 0, 999));
+  const [kwh, setKwh] = useState(() => loadNum(K_KWH, 300, 0, KWH_MAX));
   const [contract, setContract] = useState<Contract>(loadContract);
   const [summer, setSummer] = useState(month === 7 || month === 8);
   const [prevKwh, setPrevKwh] = useState<number | null>(loadPrev);
@@ -88,6 +98,12 @@ export function App() {
 
   const diff = prevBill === null ? null : bill.total - prevBill.total;
 
+  // 누진 구간 시각화 — 경계까지의 폭을 실제 kWh 비율로 그린다
+  const [b1, b2] = summer ? TIER_BOUNDS_SUMMER : TIER_BOUNDS_NORMAL;
+  const gaugeMax = Math.round(b2 * 1.5);
+  const pct = (v: number) => (Math.min(Math.max(v, 0), gaugeMax) / gaugeMax) * 100;
+  const next = useMemo(() => nextTierInfo(kwh, contract, summer), [kwh, contract, summer]);
+
   return (
     <div className="app">
       <header>
@@ -129,29 +145,29 @@ export function App() {
             type="number"
             inputMode="numeric"
             min={0}
-            max={999}
+            max={KWH_MAX}
             value={kwh}
             onChange={(e) => {
               const n = Number(e.target.value);
-              setKwh(Number.isFinite(n) ? Math.min(Math.max(Math.floor(n), 0), 999) : 0);
+              setKwh(Number.isFinite(n) ? Math.min(Math.max(Math.floor(n), 0), KWH_MAX) : 0);
             }}
           />
           <input
             className="slider"
             type="range"
             min={0}
-            max={800}
+            max={1200}
             step={10}
-            value={Math.min(kwh, 800)}
+            value={Math.min(kwh, 1200)}
             onChange={(e) => setKwh(Number(e.target.value))}
             aria-label="월 사용량 슬라이더"
           />
           <div className="slider-marks">
             <span>0</span>
-            <span>200</span>
-            <span>400</span>
+            <span>300</span>
             <span>600</span>
-            <span>800</span>
+            <span>900</span>
+            <span>1,200</span>
           </div>
         </div>
       </section>
@@ -163,6 +179,52 @@ export function App() {
           {contract === 'low' ? '주택용 저압' : '주택용 고압'} · {kwh}kWh
           {summer ? ' · 하계 완화' : ''}
         </span>
+      </section>
+
+      <section className="panel">
+        <h2 className="panel-title">누진 구간</h2>
+
+        <div className="gauge" aria-hidden>
+          <div className="gauge-track">
+            <span className="gauge-seg seg1" style={{ width: `${pct(b1)}%` }} />
+            <span className="gauge-seg seg2" style={{ width: `${pct(b2) - pct(b1)}%` }} />
+            <span className="gauge-seg seg3" style={{ width: `${100 - pct(b2)}%` }} />
+            <span className="gauge-fill" style={{ width: `${pct(kwh)}%` }} />
+            <span className="gauge-pin" style={{ left: `${pct(kwh)}%` }} />
+          </div>
+          <div className="gauge-marks">
+            <span style={{ left: `${pct(b1)}%` }}>{b1}</span>
+            <span style={{ left: `${pct(b2)}%` }}>{b2}</span>
+          </div>
+        </div>
+
+        <div className="tier-legend">
+          {([1, 2, 3] as const).map((t) => (
+            <div key={t} className={'tier-item' + (bill.tier === t ? ' on' : '')}>
+              <span className={'tier-dot d' + t} />
+              <span className="tier-name">{t}단계</span>
+              <span className="tier-kwh">{bill.tierKwh[t - 1]}kWh</span>
+            </div>
+          ))}
+        </div>
+
+        {next ? (
+          <p className={'warn' + (next.remainKwh <= 30 ? ' hot' : '')}>
+            {next.remainKwh === 0
+              ? `여기서 1kWh만 더 쓰면 ${next.nextTier}단계로 올라가요. 그 순간 ${won(next.jumpWon)}이 더 붙어요`
+              : `${next.remainKwh}kWh 더 쓰면 ${next.nextTier}단계(${next.boundary}kWh 초과)로 올라가요. 넘어가는 순간 ${won(next.jumpWon)}이 더 붙어요`}
+          </p>
+        ) : (
+          <p className="warn">
+            이미 최고 단계인 3단계예요. 지금은 1kWh마다 가장 비싼 단가가 붙어요
+          </p>
+        )}
+
+        {bill.superKwh > 0 && (
+          <p className="warn hot">
+            1,000kWh를 {bill.superKwh}kWh 넘겨 슈퍼유저 단가(736.2원/kWh)가 붙었어요
+          </p>
+        )}
       </section>
 
       <section className="panel">
