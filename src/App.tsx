@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AD_GROUP_ID } from './ads/config';
 import { bumpInterstitial } from './ads/interstitial';
 import { BannerAd } from './ads/BannerAd';
-import { BoltIcon, CompareIcon, InfoIcon, PlugIcon, SnowIcon } from './components/icons';
+import { BoltIcon, CheckIcon, CompareIcon, CopyIcon, InfoIcon, PlugIcon, SnowIcon } from './components/icons';
 import { STORAGE_PREFIX } from './config';
 import {
   airconMonthlyKwh,
@@ -11,10 +11,19 @@ import {
   TIER_BOUNDS_NORMAL,
   TIER_BOUNDS_SUMMER,
   TARIFF_DATE,
+  SUPER_RATE,
+  FUND_RATE,
   type Contract,
 } from './core/bill';
 
+// 보너스(요금 역산)는 순수 추가분이라 기존 import 줄을 건드리지 않고 따로 가져온다.
+import { canShowRewarded, showRewarded } from './ads/rewarded';
+import { maxKwhForBudget } from './core/bill';
+
 const KWH_MAX = 2000;
+
+/** 보너스에서 되짚어 볼 목표 청구액(원) */
+const BUDGETS = [30000, 50000, 70000, 100000, 150000] as const;
 
 const K_KWH = STORAGE_PREFIX + 'kwh';
 const K_CONTRACT = STORAGE_PREFIX + 'contract';
@@ -53,6 +62,35 @@ function loadPrev(): number | null {
 
 const won = (n: number) => n.toLocaleString('ko-KR') + '원';
 
+/** WebView에서 navigator.clipboard가 없는 경우가 잦아 execCommand로 폴백한다. */
+function copyText(text: string): void {
+  try {
+    if (navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
+      return;
+    }
+  } catch {
+    /* fallthrough */
+  }
+  legacyCopy(text);
+}
+
+function legacyCopy(text: string): void {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  } catch {
+    /* 복사 실패는 조용히 무시 */
+  }
+}
+
 export function App() {
   const month = new Date().getMonth() + 1;
   const [kwh, setKwh] = useState(() => loadNum(K_KWH, 300, 0, KWH_MAX));
@@ -60,8 +98,17 @@ export function App() {
   const [summer, setSummer] = useState(month === 7 || month === 8);
   const [prevKwh, setPrevKwh] = useState<number | null>(loadPrev);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [acKw, setAcKw] = useState('1.8');
   const [acHours, setAcHours] = useState(4);
+  // 보너스: 목표 금액별 사용 한도. 광고를 본 뒤 열린다(기존 화면은 그대로 무료).
+  const [bonus, setBonus] = useState(false);
+  const [bonusLoading, setBonusLoading] = useState(false);
+  const unlockBonus = () => {
+    if (bonus || bonusLoading) return;
+    setBonusLoading(true);
+    showRewarded({ onReward: () => setBonus(true), onClose: () => setBonusLoading(false) });
+  };
 
   useEffect(() => {
     try {
@@ -85,6 +132,25 @@ export function App() {
       ? calcBill({ kwh: kwh + acMonthly, contract, summer }).total - bill.total
       : 0;
 
+  /**
+   * 결과 카드가 이미 화면에 뜬 뒤에만 눌리는 버튼이라 "결과보다 광고가 먼저" 경로가
+   * 생기지 않는다. 임계값은 기존 savePrev와 같은 2 — 카운터가 모듈 스코프 공유다.
+   * 딥링크는 카톡 등에 붙여넣으면 탭이 되지 않으므로 검색 문구를 발급처로 남긴다.
+   */
+  const onCopy = () => {
+    copyText(
+      [
+        `월 ${kwh}kWh · 예상 청구액 ${won(bill.total)}`,
+        `${contract === 'low' ? '주택용 저압' : '주택용 고압'} · 누진 ${bill.tier}단계${summer ? ' · 하계 완화' : ''}`,
+        '',
+        "토스에서 '전기요금 미리보기' 검색",
+      ].join('\n')
+    );
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+    bumpInterstitial(2);
+  };
+
   const savePrev = () => {
     try {
       localStorage.setItem(K_PREV, JSON.stringify(kwh));
@@ -94,6 +160,8 @@ export function App() {
     setPrevKwh(kwh);
     setSavedFlash(true);
     window.setTimeout(() => setSavedFlash(false), 1500);
+    // 전월 값 저장 = 사용자가 계산을 끝낸 시점. 계약 종류 토글(3회)은 아무도 하지 않아 지면이 놀았다.
+    bumpInterstitial(2);
   };
 
   const diff = prevBill === null ? null : bill.total - prevBill.total;
@@ -103,6 +171,12 @@ export function App() {
   const gaugeMax = Math.round(b2 * 1.5);
   const pct = (v: number) => (Math.min(Math.max(v, 0), gaugeMax) / gaugeMax) * 100;
   const next = useMemo(() => nextTierInfo(kwh, contract, summer), [kwh, contract, summer]);
+
+  // 보너스: 목표 금액 안에서 쓸 수 있는 최대 사용량(역산). 광고를 본 뒤에만 계산한다.
+  const budgetLimits = useMemo(
+    () => (bonus ? BUDGETS.map((b) => maxKwhForBudget(b, contract, summer, KWH_MAX)) : []),
+    [bonus, contract, summer]
+  );
 
   return (
     <div className="app">
@@ -118,13 +192,13 @@ export function App() {
         <div className="seg" role="tablist" aria-label="계약 종류">
           <button
             className={'seg-btn' + (contract === 'low' ? ' on' : '')}
-            onClick={() => { setContract('low'); bumpInterstitial(3); }}
+            onClick={() => setContract('low')}
           >
             주택용 저압
           </button>
           <button
             className={'seg-btn' + (contract === 'high' ? ' on' : '')}
-            onClick={() => { setContract('high'); bumpInterstitial(3); }}
+            onClick={() => setContract('high')}
           >
             주택용 고압
           </button>
@@ -179,6 +253,11 @@ export function App() {
           {contract === 'low' ? '주택용 저압' : '주택용 고압'} · {kwh}kWh
           {summer ? ' · 하계 완화' : ''}
         </span>
+        {/* 결과 금액이 다 그려진 뒤에 온다 — 결과를 가리거나 앞서지 않는다 */}
+        <button className="copy-btn" onClick={onCopy}>
+          {copied ? <CheckIcon className="copy-icon" aria-hidden /> : <CopyIcon className="copy-icon" aria-hidden />}
+          {copied ? '복사했어요' : '결과 복사'}
+        </button>
       </section>
 
       <section className="panel">
@@ -222,10 +301,46 @@ export function App() {
 
         {bill.superKwh > 0 && (
           <p className="warn hot">
-            1,000kWh를 {bill.superKwh}kWh 넘겨 슈퍼유저 단가(736.2원/kWh)가 붙었어요
+            1,000kWh를 {bill.superKwh}kWh 넘겨 슈퍼유저 단가({SUPER_RATE}원/kWh)가 붙었어요
           </p>
         )}
       </section>
+
+      {/* 보너스 — 토스 앱 밖에서는 canShowRewarded()가 false라 버튼 자체가 안 보인다 */}
+      {canShowRewarded() && !bonus && (
+        <button type="button" className="bonus-cta" onClick={unlockBonus} disabled={bonusLoading}>
+          {bonusLoading ? '광고 확인 중' : '광고 보고 목표 금액별 사용 한도 보기'}
+        </button>
+      )}
+      {bonus && (
+        <section className="panel">
+          <h2 className="panel-title">목표 금액별 쓸 수 있는 한도</h2>
+          <p className="bonus-sub">
+            지금 조건({contract === 'low' ? '저압' : '고압'}
+            {summer ? ' · 하계 완화' : ''})에서 청구액이 그 금액을 넘지 않는 최대 사용량이에요.
+          </p>
+          <dl className="rows">
+            {budgetLimits.map((lim, i) =>
+              lim === null ? (
+                <div className="row" key={BUDGETS[i]}>
+                  <dt>{won(BUDGETS[i])} 이하</dt>
+                  <dd className="bonus-val">기본요금만으로도 넘어요</dd>
+                </div>
+              ) : (
+                <div className="row" key={lim.budget}>
+                  <dt>{won(lim.budget)} 이하</dt>
+                  <dd className="bonus-val">
+                    {lim.kwh}kWh까지 · {won(lim.total)}
+                  </dd>
+                </div>
+              )
+            )}
+          </dl>
+          <p className="meta">
+            지금 {kwh}kWh를 쓰면 {won(bill.total)}이에요. 한 칸이라도 넘으면 그 위 구간 단가가 붙어요.
+          </p>
+        </section>
+      )}
 
       <section className="panel">
         <h2 className="panel-title">요금 내역</h2>
@@ -255,11 +370,11 @@ export function App() {
             <dd>{won(bill.vat)}</dd>
           </div>
           <div className="row">
-            <dt>전력산업기반기금 (3.7%)</dt>
+            <dt>전력산업기반기금 ({(FUND_RATE * 100).toFixed(1)}%)</dt>
             <dd>{won(bill.fund)}</dd>
           </div>
         </dl>
-        <p className="meta">요금표 기준일 {TARIFF_DATE} · 청구액 10원 미만 절사</p>
+        <p className="meta">요금표 확인일 {TARIFF_DATE} · 청구액 10원 미만 절사</p>
       </section>
 
       <section className="panel">

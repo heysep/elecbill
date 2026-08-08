@@ -27,8 +27,8 @@ describe('calcBill 저압', () => {
     expect(r.fuelAdjCharge).toBe(1000);
     expect(r.subtotal).toBe(27710);
     expect(r.vat).toBe(2771);
-    expect(r.fund).toBe(1020);
-    expect(r.total).toBe(31500);
+    expect(r.fund).toBe(740); // 27,710 × 2.7% = 748.17 → 10원 절사
+    expect(r.total).toBe(31220);
   });
 
   it('201kWh: 2단계 진입, 기본요금 점프', () => {
@@ -36,7 +36,7 @@ describe('calcBill 저압', () => {
     expect(r.tier).toBe(2);
     expect(r.baseCharge).toBe(1600);
     expect(r.energyCharge).toBe(24214); // 24000 + 214.6 절사
-    expect(r.total).toBe(32540);
+    expect(r.total).toBe(32260);
   });
 
   it('400→401kWh: 3단계 진입 시 기본요금 7300원', () => {

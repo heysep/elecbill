@@ -67,6 +67,16 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .result-cap { font-size: 13px; font-weight: 700; color: #ffe3d1; }
 .result-big { font-size: 32px; font-weight: 900; color: #fff; }
 .result-sub { font-size: 13px; color: #ffd7bd; }
+/* 주황 결과 카드 안에 놓이므로 반투명 화이트로 뺀다 */
+.copy-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  align-self: stretch; margin-top: 12px; min-height: 42px; border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.14); color: #fff;
+  font-size: 14px; font-weight: 700;
+}
+.copy-btn:active { background: rgba(255, 255, 255, 0.26); }
+.copy-icon { width: 18px; height: 18px; }
 
 .rows { display: flex; flex-direction: column; gap: 8px; }
 .row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
@@ -138,7 +148,7 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
 .ac-result strong { color: var(--text); }
 
 .disclaimer {
-  font-size: 12px; color: #98a1ac; line-height: 1.6;
+  font-size: 12px; color: #687381; line-height: 1.6;
   display: flex; gap: 6px; align-items: flex-start;
 }
 .disclaimer-icon { width: 16px; height: 16px; flex: none; margin-top: 2px; }
@@ -166,3 +176,13 @@ button { font-family: inherit; border: none; background: none; cursor: pointer; 
   border-top: 1px solid var(--line);
 }
 .ad-banner-label { font-size: 11px; color: #98a1ac; }
+
+/* 리워드 광고 보너스 — 목표 금액별 사용 한도 */
+.bonus-cta {
+  min-height: 48px; border-radius: 14px; width: 100%;
+  border: 1.5px dashed var(--orange); color: var(--orange-deep);
+  background: transparent; font-size: 14px; font-weight: 700;
+}
+.bonus-cta:disabled { opacity: 0.5; }
+.bonus-sub { font-size: 12px; color: var(--sub); line-height: 1.5; margin-bottom: 4px; }
+.bonus-val { white-space: nowrap; }
