@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "granite dev",
-    "build": "ait build",
+    "dev": "vite",
+    "build": "vite build && ait build",
     "deploy": "ait deploy",
     "vite:build": "vite build",
     "preview": "vite preview",
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@apps-in-toss/web-framework": "^2.10.6",
+    "@apps-in-toss/web-framework": "^3.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
@@ -25,7 +25,8 @@
     "puppeteer-core": "^25.3.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@apps-in-toss/devtools": "^3.0.5"
   },
   "engines": {
     "node": ">=22.12"
