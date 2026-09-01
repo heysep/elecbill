@@ -5,7 +5,9 @@ export default defineConfig({
   appName: 'elecbill',
 
   brand: {
+    displayName: '전기요금 미리보기',
     primaryColor: '#E8611A',
+    icon: 'https://static.toss.im/appsintoss/61245/f04ed42f-8249-41d5-ae45-5ea445fc8320.png',
   },
 
   permissions: [],
