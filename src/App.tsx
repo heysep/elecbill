@@ -196,6 +196,9 @@ export function App() {
    * - 슬라이더를 끄는 동안에는 타이머가 계속 새로 잡혀 광고가 뜰 수 없다.
    * - 첫 렌더는 사용자 행동이 아니므로 건너뛴다(안 건너뛰면 정착 1회가 공짜로 세어진다).
    * - 실제 노출은 interstitial.ts 가 진입 8초·세션 1회로 다시 잠근다.
+   *
+   * 개발 모드에서는 StrictMode 가 effect 를 두 번 돌려 유령 정착 1회가 더 세어진다.
+   * 프로덕션 빌드에는 그 이중 호출이 없으므로 배포본은 영향이 없다.
    */
   const settledOnceRef = useRef(false);
   useEffect(() => {
