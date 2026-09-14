@@ -8,7 +8,7 @@ export default defineConfig({
   brand: {
     displayName: '주거급여 계산기',
     primaryColor: '#0E8A6E',
-    icon: 'https://static.toss.im/appsintoss/61245/f04ed42f-8249-41d5-ae45-5ea445fc8320.png',
+    icon: 'https://static.toss.im/appsintoss/61245/3bd3ddb3-301c-4d35-971c-37bb62cf8602.png',
   },
 
   permissions: [],
