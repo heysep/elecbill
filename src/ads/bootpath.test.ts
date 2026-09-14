@@ -16,7 +16,8 @@ import { describe, expect, it } from 'vitest';
 const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8');
 
 /** 광고 SDK 를 실제로 «부르는» 것들. import 구문은 여기 안 걸린다. */
-const AD_CALL = /\b(initAds|preloadInterstitial|loadFullScreenAd|showFullScreenAd|bumpInterstitial|showRewarded|TossAds)\s*\(/;
+const AD_CALL =
+  /\b(initAds|preloadInterstitial|loadFullScreenAd|showFullScreenAd|bumpInterstitialSettled|bumpInterstitial|showRewarded|TossAds)\s*\(/;
 
 describe('부팅 경로 광고 금지', () => {
   it('main.tsx 에는 광고 참조가 아예 없다', () => {

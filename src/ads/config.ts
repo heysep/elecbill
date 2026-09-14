@@ -9,7 +9,11 @@
 export const AD_GROUP_ID =
   (import.meta.env.VITE_AD_GROUP_ID as string | undefined) || 'ait.v2.live.fc19a998937b4e2a';
 
-/** 리워드(보상형) 광고 그룹 ID. 미발급이면 canShowRewarded()가 false라 버튼을 안 그린다. */
+/**
+ * 리워드 광고 그룹 ID.
+ * 실측: 리워드 eCPM이 배너의 수십 배다. 리워드 지점을 하나 두되,
+ * **핵심 결과를 광고 뒤로 옮기지 말 것** — "추가로 더 보여주는 것"에만 붙인다.
+ */
 export const REWARDED_AD_ID =
   (import.meta.env.VITE_REWARDED_AD_ID as string | undefined) || 'ait.v2.live.6f8a4d2fa33a480d';
 

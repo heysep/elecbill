@@ -37,15 +37,15 @@ describe('전면광고 노출 조건', () => {
   it('진입 직후 시간 가드가 있다', () => {
     const src = read('./interstitial.ts');
     expect(src, '진입 가드가 없다 — 「접속 직후 노출」 반려 형태다').toMatch(/MIN_MS_IN_SESSION/);
-    const body = src.match(/export function bumpInterstitial\([\s\S]*?\n\}/)?.[0] ?? '';
-    expect(body, 'bumpInterstitial 을 못 찾았다').not.toBe('');
-    expect(body, '가드가 bumpInterstitial 안에 걸려 있지 않다').toMatch(/sessionStartedAt/);
+    const body = src.match(/export function bumpInterstitialSettled\([\s\S]*?\n\}/)?.[0] ?? '';
+    expect(body, 'bumpInterstitialSettled 를 못 찾았다').not.toBe('');
+    expect(body, '가드가 bumpInterstitialSettled 안에 걸려 있지 않다').toMatch(/sessionStartedAt/);
   });
 
   it('문턱 비교가 >= 다 — 건너뛴 세션이 영영 못 띄우지 않는다', () => {
     const src = read('./interstitial.ts');
-    expect(src).not.toMatch(/actionCount !== threshold/);
-    expect(src).toMatch(/actionCount < threshold/);
+    expect(src).not.toMatch(/settledCount !== threshold/);
+    expect(src).toMatch(/settledCount < threshold/);
   });
 
   it('세션당 1회 캡이 살아 있다', () => {
@@ -58,11 +58,18 @@ describe('전면광고 노출 조건', () => {
 describe('호출부', () => {
   it('전면 트리거가 남아 있다 — 지우면 지면이 23일 뒤 삭제된다', () => {
     const src = read('../App.tsx');
-    const calls = [...src.matchAll(/bumpInterstitial\(/g)];
+    const calls = [...src.matchAll(/bumpInterstitialSettled\(/g)];
     expect(calls.length, '전면 트리거가 사라졌다').toBeGreaterThan(0);
   });
 
-  it('마운트 useEffect 에서 광고를 부르지 않는다', () => {
+  /**
+   * 이 앱은 버튼이 아니라 슬라이더로 값을 바꾼다. 그래서 「정착(debounce)한 뒤 1회」로 세는데,
+   * 그 타이머는 입력값을 보는 useEffect 안에 있을 수밖에 없다. 그 대신 두 가지를 강제한다:
+   *   ① 호출이 반드시 setTimeout 뒤에 있을 것 — 첫 페인트를 막지 않는다.
+   *   ② 첫 렌더는 건너뛸 것 — effect 는 마운트 때 한 번 돌기 때문에, 안 건너뛰면
+   *      사용자가 아무것도 안 했는데 정착 1회가 공짜로 세어진다.
+   */
+  it('전면 호출이 setTimeout 뒤에 있고 첫 렌더를 건너뛴다', () => {
     const src = read('../App.tsx');
     const effects = [
       ...src.matchAll(/useEffect\(\s*\(\)\s*=>\s*\{([\s\S]*?)\},\s*\[[^\]]*\]\s*\)/g),
@@ -70,10 +77,23 @@ describe('호출부', () => {
     expect(effects.length, 'useEffect 를 못 찾았다 — 정규식이 코드 모양과 안 맞는다').toBeGreaterThan(
       0,
     );
+    let found = 0;
     for (const [, body] of effects) {
-      expect(body, 'effect 에서 광고를 부르면 첫 페인트 전에 실행된다').not.toMatch(
-        /bumpInterstitial\(|showRewarded\(/,
+      if (!/bumpInterstitialSettled\(/.test(body)) {
+        expect(body, 'effect 안에서 리워드를 즉시 부르면 안 된다').not.toMatch(/showRewarded\(/);
+        continue;
+      }
+      found++;
+      expect(body, '전면 호출이 setTimeout 안에 없다 — 첫 페인트 전에 실행된다').toMatch(
+        /setTimeout\(/,
+      );
+      expect(body, '타이머 정리(clearTimeout)가 없다 — 드래그 중에도 광고가 뜬다').toMatch(
+        /clearTimeout\(/,
+      );
+      expect(body, '첫 렌더 건너뛰기 가드가 없다 — 아무것도 안 해도 1회가 세어진다').toMatch(
+        /settledOnceRef|firstRunRef|skipFirst/,
       );
     }
+    expect(found, '정착 기반 전면 트리거 effect 를 못 찾았다').toBe(1);
   });
 });

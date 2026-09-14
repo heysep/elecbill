@@ -5,8 +5,10 @@ import { FULLSCREEN_AD_ID } from './config';
  * 토스 전면(영상) 광고.
  * ID 미발급/미지원/실패는 전부 흡수 — 광고 없이 그대로 진행한다.
  *
- * 빈도 정책: 사용자가 직접 누른 전환 N회째부터 1번, 세션당 최대 1회.
- * 진입 즉시 전면광고는 이탈·심사 리스크가 커서 쓰지 않는다.
+ * 이 앱은 버튼이 아니라 슬라이더·칩으로 값을 바꾸는 계산기다. 그래서 「누른 횟수」로 세면
+ * 슬라이더 한 번 끄는 동안 수십 번 세어 문턱을 즉시 넘겨 버린다. 대신 **값이 정착한 횟수**
+ * 로 센다 — App 이 입력이 900ms 조용해진 뒤에만 bumpInterstitialSettled 를 부른다.
+ * 드래그 중에는 타이머가 계속 새로 잡히므로 광고가 뜰 수 없다.
  */
 // config.ts 의 기본값을 쓴다. 여기서 env 를 다시 읽으면 config 에 ID 를 박아 두어도
 // 이 파일만 빈 문자열이 되어 전면광고가 조용히 사라진다.
@@ -24,7 +26,7 @@ const MIN_MS_IN_SESSION = 8_000;
 
 const sessionStartedAt = Date.now();
 let shownCount = 0;
-let actionCount = 0;
+let settledCount = 0;
 
 function play(): void {
   if (!FS_AD_ID) return;
@@ -52,16 +54,16 @@ function play(): void {
 }
 
 /**
- * 능동 액션마다 호출 — threshold회째부터 전면광고 1번(세션 캡 적용).
+ * 입력값이 **정착한** 뒤 한 번씩 호출 — threshold번째 정착부터 전면광고 1번(세션 캡 적용).
  *
- * `!==` 였던 것을 `>=` 로 바꾼다. 한 상호작용이 bump 를 두 번 부르면 카운터가 문턱을
+ * `!==` 였던 것을 `>=` 로 둔다. 한 상호작용이 bump 를 두 번 부르면 카운터가 문턱을
  * 건너뛰어 그 세션은 전면광고를 영영 못 띄웠다. 노출 빈도는 그대로고 건너뜀만 막는다.
  *
- * 가드에 걸린 액션은 버리지 않고 카운트만 남긴다 — 버리면 문턱을 넘긴 세션이 영영 못 띄운다.
+ * 가드에 걸린 정착은 버리지 않고 카운트만 남긴다 — 버리면 문턱을 넘긴 세션이 영영 못 띄운다.
  */
-export function bumpInterstitial(threshold: number): void {
-  actionCount++;
-  if (shownCount >= SESSION_CAP || actionCount < threshold) return;
+export function bumpInterstitialSettled(threshold: number): void {
+  settledCount++;
+  if (shownCount >= SESSION_CAP || settledCount < threshold) return;
   if (Date.now() - sessionStartedAt < MIN_MS_IN_SESSION) return;
   shownCount++;
   play();
